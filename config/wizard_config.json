@@ -1,0 +1,67 @@
+{
+  "_doc": {
+    "param_group": "Tamanho máximo do grupo de itens financeiros considerado num combo 1:N. 9999 = sem limite prático.",
+    "param_max_candidates": "Teto de candidatos financeiros avaliados por grupo no passo 1:N. 9999 = sem limite prático.",
+    "param_enable_n_to_one": "Habilita confronto N:1 (vários bancários para um financeiro). false = desabilitado por padrão.",
+    "param_n_to_one_candidates": "Teto de candidatos bancários avaliados por grupo no passo N:1.",
+    "param_combo_timeout": "Timeout em segundos por chamada de combinação. Grupos que estourem o tempo retornam resultado parcial marcado como REVISAR. 0 = sem limite.",
+    "param_tol": "Tolerância em centavos para considerar dois valores iguais. 0 = correspondência exata.",
+    "param_offsets": "Offsets de data a considerar (em dias). Ex.: 0,1,-1,2,-2 = mesmo dia, +1, -1, +2, -2.",
+    "param_discard": "Padrões de histórico bancário a ignorar (um por linha). Lançamentos com esses textos são excluídos do confronto."
+  },
+  "extrato_sheet": "Itaú",
+  "extrato_skip": 0,
+  "extrato_suffix": ".xls",
+  "fin_sheet": "Plan1",
+  "fin_skip": 0,
+  "fin_suffix": ".xlsx",
+  "fin_modalidade_str": "PAGAMENTOS",
+  "default_year": 2026,
+  "bnk_col_data": "Data Lançamento",
+  "bnk_col_hist": [
+    "Descrição Histórico"
+  ],
+  "bnk_valor_mod": "Coluna única (com sinal)",
+  "bnk_col_valor": "Valor Lançamento",
+  "param_tol": 0,
+  "param_group": 9999,
+  "param_max_candidates": 9999,
+  "param_enable_n_to_one": false,
+  "param_n_to_one_candidates": 9999,
+  "param_combo_timeout": 1.0,
+  "param_offsets": "0,1,-1,2,-2",
+  "param_discard": "SDO\nSALDO\nS/D\nSALDO ANTERIOR\nSALDO DO DIA",
+  "extrato_mapping": {
+    "col_data": "Data Lançamento",
+    "col_historico": [
+      "Descrição Histórico"
+    ],
+    "valor_modalidade": "coluna_unica",
+    "col_valor": "Valor Lançamento",
+    "col_debito": null,
+    "col_credito": null,
+    "col_id": null,
+    "colunas_extras": [],
+    "skip_rows": 0,
+    "sheet_name": "Itaú"
+  },
+  "fin_mapping": {
+    "col_data": "DT_PAG",
+    "col_historico": [
+      "Razao",
+      "NUM_DUP"
+    ],
+    "valor_modalidade": "coluna_unica",
+    "col_valor": "VALOR_PAG",
+    "col_debito": null,
+    "col_credito": null,
+    "col_id": null,
+    "col_classificacao": "COD_CENTROCUSTO",
+    "colunas_extras": [],
+    "skip_rows": 0,
+    "sheet_name": "Plan1",
+    "modalidade": "pagamentos",
+    "hist_prefix": "",
+    "hist_separator": " - "
+  }
+}
