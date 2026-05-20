@@ -164,6 +164,8 @@ def _show_client_management():
             filtro_st = st.selectbox("Status", ["Ativos", "Todos", "Inativos"], key="adm_emp_st")
 
     # ── Aplicar filtros ──
+
+
     df = pd.DataFrame(clientes)
     if df.empty:
         st.info("Nenhuma empresa cadastrada. Use **Importar planilha** ou **Adicionar** abaixo.")
@@ -214,6 +216,175 @@ def _show_client_management():
     )
 
     st.dataframe(
+        df_exib,
+        hide_index=True,
+        use_container_width=True,
+        height=min(35 * len(df_exib) + 38, 520),
+        column_config={
+            "Código":    st.column_config.TextColumn("Código",    width=80),
+            "Empresa":   st.column_config.TextColumn("Empresa",   width=320),
+            "CNPJ":      st.column_config.TextColumn("CNPJ",      width=160),
+            "Grupo":     st.column_config.TextColumn("Grupo",     width=180),
+            "Unidade":   st.column_config.TextColumn("Unidade",   width=120),
+            "Tributação":st.column_config.TextColumn("Tributação",width=140),
+            "Nível":     st.column_config.TextColumn("Nível",     width=100),
+            "Regras":    st.column_config.NumberColumn("Regras",  width=70),
+            "Status":    st.column_config.TextColumn("Status",    width=90),
+        },
+    )
+
+    if not df_exib.empty:
+        buf = io.StringIO()
+        df_exib.to_csv(buf, index=False, encoding="utf-8-sig")
+        st.download_button(
+            "⬇️ Exportar CSV",
+            buf.getvalue().encode("utf-8-sig"),
+            "empresas.csv", "text/csv", key="adm_emp_export",
+        )
+
+    # ── Exclusão em lote ──
+    st.divider()
+    _show_batch_delete(clientes)
+
+    st.divider()
+    _show_add_import(clientes)
+    st.divider()
+    _show_edit_delete(clientes)
+
+
+def _show_batch_delete(clientes: list):
+    """Permite selecionar múltiplas empresas e excluí-las em lote."""
+    if not clientes:
+        return
+
+    with st.expander("🗑️ Exclusão em lote de empresas", expanded=False):
+        opts = sorted(clientes, key=lambda x: (x.get("codigo_interno") or "", x["nome"]))
+        labels = {
+            c["id"]: f"{c.get('codigo_interno') or 'SEM CODIGO'} - {c['nome']}"
+            for c in opts
+        }
+        by_id = {c["id"]: c for c in clientes}
+
+        selecionados = st.multiselect(
+            "Selecione as empresas para excluir",
+            options=[c["id"] for c in opts],
+            format_func=lambda cid: labels.get(cid, str(cid)),
+            key="adm_batch_del_sel",
+            placeholder="Selecione uma ou mais empresas...",
+        )
+
+        if selecionados:
+            total_depara = sum(by_id[cid].get("num_depara", 0) for cid in selecionados)
+            nomes = [labels.get(cid, str(cid)) for cid in selecionados]
+
+            st.warning(
+                f"**{len(selecionados)} empresa(s)** selecionada(s) para exclusão.\n\n"
+                f"Serão removidas **{total_depara} regra(s)** De x Para no total."
+            )
+            with st.container():
+                st.caption("Empresas selecionadas:")
+                for nome in nomes:
+                    st.markdown(f"- {nome}")
+
+            confirmar = st.checkbox(
+                f"Confirmo a exclusão permanente de **{len(selecionados)} empresa(s)** e todos os seus dados",
+                key="adm_batch_del_confirm",
+            )
+            if st.button(
+                f"🗑️ Excluir {len(selecionados)} empresa(s)",
+                type="primary",
+                disabled=not confirmar,
+                key="adm_batch_del_btn",
+            ):
+                for cid in selecionados:
+                    cli = by_id.get(cid)
+                    nome_cli = cli["nome"] if cli else str(cid)
+                    depara_count = cli.get("num_depara", 0) if cli else 0
+                    delete_cliente(cid)
+                    log_acao(
+                        st.session_state["usuario_email"],
+                        "CLIENTE_EXCLUIDO",
+                        f"nome={nome_cli};depara={depara_count};modo=lote",
+                    )
+                st.success(f"**{len(selecionados)} empresa(s)** excluída(s) com sucesso.")
+                st.rerun()
+        else:
+            st.info("Selecione uma ou mais empresas acima para habilitar a exclusão em lote.")
+
+
+def _show_add_import(clientes: list):
+    col_add, col_imp = st.columns(2)
+
+    with col_add:
+        with st.expander("➕ Adicionar empresa manualmente", expanded=False):
+            with st.form("form_add_emp"):
+                r1c1, r1c2, r1c3 = st.columns(3)
+                with r1c1:
+                    n_nome = st.text_input("Nome *", key="ae_nome")
+                with r1c2:
+                    n_cnpj = st.text_input("CNPJ", key="ae_cnpj")
+                with r1c3:
+                    n_cod  = st.text_input("Código", key="ae_cod")
+                r2c1, r2c2, r2c3, r2c4 = st.columns(4)
+                with r2c1:
+                    n_grp = st.text_input("Grupo", key="ae_grp")
+                with r2c2:
+                    n_und = st.text_input("Unidade JCA", key="ae_und")
+                with r2c3:
+                    n_tri = st.text_input("Tributação", key="ae_tri")
+                with r2c4:
+                    n_niv = st.text_input("Nível", key="ae_niv")
+                ok = st.form_submit_button("Adicionar", type="primary")
+            if ok:
+                if not n_nome.strip():
+                    st.error("Nome obrigatório.")
+                elif create_cliente(n_nome.strip()):
+                    cid = get_cliente_id(n_nome.strip())
+                    if cid:
+                        update_cliente(
+                            cid,
+                            cnpj=n_cnpj.strip(), codigo_interno=n_cod.strip(),
+                            grupo=n_grp.strip(), unidade_jca=n_und.strip(),
+                            tributacao=n_tri.strip(), nivel_operacional=n_niv.strip(),
+                        )
+                    log_acao(st.session_state["usuario_email"], "CLIENTE_CRIADO", f"nome={n_nome.strip()}")
+                    st.success(f"**{n_nome.strip()}** adicionada.")
+                    st.rerun()
+                else:
+                    st.warning("Já existe uma empresa com esse nome.")
+
+    with col_imp:
+        with st.expander("📥 Importar planilha (Excel / CSV)", expanded=False):
+            st.caption(
+                "Colunas detectadas automaticamente: **CÓD, GRUPO, CNPJ, EMPRESAS, "
+                "UNIDADE JCA, TRIBUTAÇÃO 2026, NÍVEL OPERACIONAL**"
+            )
+            up = st.file_uploader(
+                "Selecione o arquivo", type=["xlsx", "xls", "csv"], key="adm_imp_file"
+            )
+            if up:
+                try:
+                    suffix = up.name.rsplit(".", 1)[-1].lower()
+                    preview_bytes = up.read()
+                    if suffix in ("xlsx", "xls"):
+                        df_prev = pd.read_excel(io.BytesIO(preview_bytes), dtype=str)
+                    else:
+                        df_prev = pd.read_csv(io.BytesIO(preview_bytes), dtype=str, encoding="utf-8-sig")
+                    df_prev.columns = [c.strip() for c in df_prev.columns]
+                    st.markdown(f"**Prévia — {len(df_prev)} linha(s), {len(df_prev.columns)} coluna(s):**")
+                    st.dataframe(df_prev.head(5), hide_index=True, use_container_width=True)
+
+                    if st.button("Confirmar importação", type="primary", key="adm_imp_confirm"):
+                        res = import_clientes_bulk(preview_bytes, f".{suffix}")
+                        log_acao(
+                            st.session_state["usuario_email"],
+                            "CLIENTES_IMPORTADOS",
+                            f"inseridos={res['inseridos']};atualizados={res['atualizados']};ignorados={res['ignorados']}",
+                        )
+                        st.success(
+                            f"Importação concluída: **{res['inseridos']}** inserida(s), "
+                            f"**{res['atualizados']}** atualizada(s), "
+                            f"**{res['ignorados']}** ignorada(s)."
                         )
                         st.rerun()
                 except Exception as e:
@@ -301,11 +472,6 @@ def _show_edit_delete(clientes: list):
             f"Confirmo a exclusão permanente de **{sel_nome}**", key=f"adm_del_chk_{sel_id}"
         )
         if st.button("🗑️ Excluir empresa", type="primary", disabled=not confirmar, key=f"adm_del_btn_{sel_id}"):
-            delete_cliente(cli["id"])
-            log_acao(
-                st.session_state["usuario_email"],
-                "CLIENTE_EXCLUIDO",
-                f"nome={sel_nome};depara={cli['num_depara']}",
             )
             st.success(f"**{sel_nome}** excluída.")
             st.rerun()
