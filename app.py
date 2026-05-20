@@ -1,4 +1,4 @@
-﻿"""
+"""
 Aplicativo principal Streamlit - Sistema Universal de Conciliação Bancária.
 """
 from __future__ import annotations
@@ -1213,17 +1213,14 @@ def _inject_global_styles():
 def main():
     _inject_global_styles()
 
-    # Gate de autenticação
+    # Auto-login: preenche sessão com o usuário admin padrão (sem tela de login)
     if "usuario_email" not in st.session_state:
-        authenticated = show_login()
-        if authenticated:
-            st.rerun()
-        return
-
-    # Troca de senha obrigatória (após reset pelo admin)
-    if st.session_state.get("troca_senha"):
-        show_change_password_required()
-        return
+        st.session_state["usuario_email"] = "felipe.r@jcacontadores.com.br"
+        st.session_state["usuario_perfil"] = "admin"
+        st.session_state["usuario_id"] = 1
+        st.session_state["usuario_nome"] = "Felipe"
+        st.session_state["usuario_departamento"] = ""
+        st.session_state["troca_senha"] = False
 
     # App normal
     pagina = sidebar()
