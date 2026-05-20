@@ -1,4 +1,4 @@
-﻿"""
+"""
 Configurações Gerais — gestão de empresas, usuários, auditoria e histórico De x Para.
 """
 from __future__ import annotations
@@ -226,28 +226,6 @@ def _show_client_management():
             "Unidade":   st.column_config.TextColumn("Unidade",   width=120),
             "Tributação":st.column_config.TextColumn("Tributação",width=140),
             "Nível":     st.column_config.TextColumn("Nível",     width=100),
-            "Regras":    st.column_config.NumberColumn("Regras",  width=70),
-            "Status":    st.column_config.TextColumn("Status",    width=90),
-        },
-    )
-
-    if not df_exib.empty:
-        buf = io.StringIO()
-        df_exib.to_csv(buf, index=False, encoding="utf-8-sig")
-        st.download_button(
-            "⬇️ Exportar CSV",
-            buf.getvalue().encode("utf-8-sig"),
-            "empresas.csv", "text/csv", key="adm_emp_export",
-        )
-
-    st.divider()
-    _show_add_import(clientes)
-    st.divider()
-    _show_edit_delete(clientes)
-
-
-def _show_add_import(clientes: list):
-    col_add, col_imp = st.columns(2)
 
     with col_add:
         with st.expander("➕ Adicionar empresa manualmente", expanded=False):
