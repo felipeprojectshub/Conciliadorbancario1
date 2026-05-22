@@ -9,18 +9,16 @@ streamlit-*.log
 streamlit-*.err.log
 streamlit-*.out.log
 
-# Jobs e temporários
+# Jobs, bancos locais e temporarios
 data/jobs/
+data/*.db
+data/*.sqlite
+data/*.sqlite3
 *.tmp
 
-# NOTA sobre o banco de dados (data/conciliador.db):
-# O banco É commitado intencionalmente — o Streamlit Cloud tem
-# filesystem efêmero (perde dados ao reiniciar) e usa o .db do git
-# como "fonte da verdade". Workflow obrigatório ANTES de cada push:
-#   1. No Streamlit Cloud → Admin → aba Backup → Exportar backup
-#   2. Localmente: Admin → aba Backup → Restaurar com o arquivo baixado
-#   3. Só então commitar + push
-# Isso evita perder regras de De x Para adicionadas em produção.
+# Bancos locais nao devem ser versionados.
+# O app cria data/conciliador.db automaticamente vazio quando necessario.
+# Para producao, configure CONCILIADOR_DB_PATH em um volume persistente.
 
 # Ambientes virtuais
 .venv/

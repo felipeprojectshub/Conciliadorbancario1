@@ -14,20 +14,20 @@
 | Item | Valor |
 |------|-------|
 | **Tipo** | SQLite 3 (arquivo local) |
-| **Arquivo** | `data/conciliador.db` |
+| **Arquivo** | `data/conciliador.db` local, criado automaticamente |
 | **Tamanho** | ~213 KB |
-| **Localização** | Dentro do repositório Git, na máquina do desenvolvedor |
+| **Localização** | Fora do versionamento Git, na máquina/volume configurado |
 
 ### 1.2 Dados existentes
 
 | Tabela | Registros | Descrição |
 |--------|-----------|-----------|
-| `clientes` | 631 | Empresas/clientes cadastrados |
-| `usuarios` | 56 | Usuários do sistema (login/senha com bcrypt) |
-| `depara` | 215 | Regras de De x Para contábil |
-| `logs` | 130 | Log de ações/auditoria |
-| `depara_historico` | 7 | Histórico de alterações no De x Para |
-| `conciliacao_templates` | 0 | Templates de configuração de conciliação |
+| `clientes` | 0 no banco versionado | Empresas/clientes cadastrados |
+| `usuarios` | 0 no banco versionado | Usuários do sistema |
+| `depara` | 0 no banco versionado | Regras de De x Para contábil |
+| `logs` | 0 no banco versionado | Log de ações/auditoria |
+| `depara_historico` | 0 no banco versionado | Histórico de alterações no De x Para |
+| `conciliacao_templates` | 0 no banco versionado | Templates de configuração de conciliação |
 
 ### 1.3 Como o app se conecta ao banco hoje
 
@@ -422,7 +422,7 @@ UNION ALL SELECT 'conciliacao_templates', COUNT(*) FROM conciliacao_templates;
 **Resultado esperado:**
 | Tabela | Registros |
 |--------|-----------|
-| clientes | 631 |
+| clientes | 0 no repositório |
 | usuarios | 56 |
 | depara | 215 |
 | logs | 130 |
@@ -585,7 +585,7 @@ $env:PGPASSWORD = "SENHA_SEGURA"
 | # | Teste | Status |
 |---|-------|--------|
 | 1 | **Login** — Fazer login com um usuário existente | ☐ |
-| 2 | **Lista de clientes** — Verificar se carregam as 631 empresas | ☐ |
+| 2 | **Lista de clientes** — Verificar cadastro/importação de empresas | ☐ |
 | 3 | **De x Para** — Selecionar um cliente e confirmar que as regras aparecem | ☐ |
 | 4 | **Criar cliente** — Cadastrar empresa de teste e verificar persistência | ☐ |
 | 5 | **Logs** — Verificar no painel admin se os logs históricos estão presentes | ☐ |
@@ -623,7 +623,7 @@ nssm stop ConciliadorBancario
 # 3. Os usuários continuam acessando localmente até resolver o problema
 ```
 
-> **Importante:** Manter o banco SQLite original (`data/conciliador.db`) intacto durante
+> **Importante:** Manter backups externos do banco SQLite de produção durante
 > pelo menos 30 dias após a migração, como rede de segurança.
 
 ---

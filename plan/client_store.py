@@ -308,7 +308,7 @@ def _seed_default_admin():
                 (email, _hash_pw(env_pw or "123456"), "admin", datetime.datetime.now().isoformat()),
             )
         elif env_pw:
-            # Se ADMIN_PASSWORD estiver configurada no ambiente, prevalece sobre o DB commitado
+            # Se ADMIN_PASSWORD estiver configurada no ambiente, prevalece sobre o banco local.
             con.execute(
                 "UPDATE usuarios SET senha_hash=?, troca_senha_obrigatoria=0 WHERE email=?",
                 (_hash_pw(env_pw), email),

@@ -68,7 +68,7 @@ plan/
   client_store.py         # SQLite: clientes, usuários, De-Para, logs
   planilha_contabil.py    # Exportação/aplicação De-Para
 data/
-  conciliador.db          # Banco SQLite (criado automaticamente)
+  conciliador.db          # Banco SQLite local (criado automaticamente, nao versionado)
 tests/
   test_conciliacao.py     # 12 cenários de teste
 exemplos/
