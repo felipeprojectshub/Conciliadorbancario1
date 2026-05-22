@@ -472,6 +472,11 @@ def _show_edit_delete(clientes: list):
             f"Confirmo a exclusão permanente de **{sel_nome}**", key=f"adm_del_chk_{sel_id}"
         )
         if st.button("🗑️ Excluir empresa", type="primary", disabled=not confirmar, key=f"adm_del_btn_{sel_id}"):
+            delete_cliente(cli["id"])
+            log_acao(
+                st.session_state["usuario_email"],
+                "CLIENTE_EXCLUIDO",
+                f"nome={sel_nome};depara={cli.get('num_depara', 0)};modo=individual",
             )
             st.success(f"**{sel_nome}** excluída.")
             st.rerun()
