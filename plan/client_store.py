@@ -754,12 +754,14 @@ def rename_cliente(cliente_id: int, novo_nome: str) -> bool:
         return False
 
 
-def delete_cliente(cliente_id: int):
-    """Remove o cliente e todas as suas regras De-Para."""
+def delete_cliente(cliente_id: int) -> int:
+    """Remove o cliente e seus dados vinculados. Retorna 1 se removeu o cliente."""
     with _conn() as con:
         con.execute("DELETE FROM depara WHERE cliente_id=?", (cliente_id,))
+        con.execute("DELETE FROM depara_historico WHERE cliente_id=?", (cliente_id,))
         con.execute("DELETE FROM conciliacao_templates WHERE cliente_id=?", (cliente_id,))
-        con.execute("DELETE FROM clientes WHERE id=?", (cliente_id,))
+        cur = con.execute("DELETE FROM clientes WHERE id=?", (cliente_id,))
+        return int(cur.rowcount or 0)
 
 
 # -- De-Para ----------------------------------------------------------------------

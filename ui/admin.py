@@ -24,6 +24,22 @@ _NIVEIS = ["Todos", "SÊNIOR", "MASTER", "PLENO", "ESPECIALISTA", "JÚNIOR"]
 _UNIDADES = ["Todas", "MATRIZ", "FILIAL CAXIAS", "AURELINO LEAL"]
 
 
+def _clear_client_ui_state():
+    st.cache_data.clear()
+    for key in [
+        "adm_batch_del_sel",
+        "adm_batch_del_confirm",
+        "adm_edit_sel_id",
+        "wiz_cli_sel_id_empty_default",
+        "dp_cli_sel_id_empty_default",
+        "cliente_conciliacao",
+        "cliente_conciliacao_id",
+        "wiz_cli_saved_id",
+        "dp_cli_saved_id",
+    ]:
+        st.session_state.pop(key, None)
+
+
 def show_admin_panel():
     st.title("Configurações Gerais")
     _show_kpi_banner()
@@ -285,17 +301,24 @@ def _show_batch_delete(clientes: list):
                 disabled=not confirmar,
                 key="adm_batch_del_btn",
             ):
+                total_removido = 0
                 for cid in selecionados:
                     cli = by_id.get(cid)
                     nome_cli = cli["nome"] if cli else str(cid)
                     depara_count = cli.get("num_depara", 0) if cli else 0
-                    delete_cliente(cid)
-                    log_acao(
-                        st.session_state["usuario_email"],
-                        "CLIENTE_EXCLUIDO",
-                        f"nome={nome_cli};depara={depara_count};modo=lote",
-                    )
-                st.success(f"**{len(selecionados)} empresa(s)** excluída(s) com sucesso.")
+                    removidos = delete_cliente(cid)
+                    total_removido += removidos
+                    if removidos:
+                        log_acao(
+                            st.session_state["usuario_email"],
+                            "CLIENTE_EXCLUIDO",
+                            f"nome={nome_cli};depara={depara_count};modo=lote",
+                        )
+                _clear_client_ui_state()
+                if total_removido:
+                    st.success(f"**{total_removido}** empresa(s) excluída(s) com sucesso.")
+                else:
+                    st.warning("Nenhuma empresa foi excluída. Atualize a lista e tente novamente.")
                 st.rerun()
         else:
             st.info("Selecione uma ou mais empresas acima para habilitar a exclusão em lote.")
@@ -461,13 +484,17 @@ def _show_edit_delete(clientes: list):
             f"Confirmo a exclusão permanente de **{sel_nome}**", key=f"adm_del_chk_{sel_id}"
         )
         if st.button("🗑️ Excluir empresa", type="primary", disabled=not confirmar, key=f"adm_del_btn_{sel_id}"):
-            delete_cliente(cli["id"])
-            log_acao(
-                st.session_state["usuario_email"],
-                "CLIENTE_EXCLUIDO",
-                f"nome={sel_nome};depara={cli.get('num_depara', 0)};modo=individual",
-            )
-            st.success(f"**{sel_nome}** excluída.")
+            removidos = delete_cliente(cli["id"])
+            _clear_client_ui_state()
+            if removidos:
+                log_acao(
+                    st.session_state["usuario_email"],
+                    "CLIENTE_EXCLUIDO",
+                    f"nome={sel_nome};depara={cli.get('num_depara', 0)};modo=individual",
+                )
+                st.success(f"**{sel_nome}** excluída.")
+            else:
+                st.warning("A empresa selecionada não foi encontrada. A lista será atualizada.")
             st.rerun()
 
 
