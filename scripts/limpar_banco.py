@@ -1,7 +1,7 @@
 """
 Script para limpar o banco de dados:
 - Exclui TODAS as empresas (clientes) e seus dados relacionados (depara, templates)
-- Exclui TODOS os usuários exceto felipe.r@jcacontadores.com.br
+- Exclui TODOS os usuários exceto admin@conciliador.local
 - Limpa logs e histórico de depara
 
 Uso:
@@ -13,7 +13,7 @@ from pathlib import Path
 
 DB_PATH = Path(__file__).parent.parent / "data" / "conciliador.db"
 
-ADMIN_EMAIL = "felipe.r@jcacontadores.com.br"
+ADMIN_EMAIL = "admin@conciliador.local"
 
 
 def main():

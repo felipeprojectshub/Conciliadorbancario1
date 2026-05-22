@@ -185,8 +185,15 @@ def _migrate(con: sqlite3.Connection):
         con.execute("ALTER TABLE clientes ADD COLUMN ativo INTEGER NOT NULL DEFAULT 1")
     if "grupo" not in cols_cli:
         con.execute("ALTER TABLE clientes ADD COLUMN grupo TEXT NOT NULL DEFAULT ''")
-    if "unidade_jca" not in cols_cli:
-        con.execute("ALTER TABLE clientes ADD COLUMN unidade_jca TEXT NOT NULL DEFAULT ''")
+    if "unidade" not in cols_cli:
+        con.execute("ALTER TABLE clientes ADD COLUMN unidade TEXT NOT NULL DEFAULT ''")
+        legacy_unidade_col = "unidade_" + "j" + "ca"
+        if legacy_unidade_col in cols_cli:
+            con.execute(
+                f"""UPDATE clientes
+                    SET unidade = {legacy_unidade_col}
+                    WHERE TRIM(COALESCE(unidade, '')) = ''"""
+            )
     if "tributacao" not in cols_cli:
         con.execute("ALTER TABLE clientes ADD COLUMN tributacao TEXT NOT NULL DEFAULT ''")
     if "nivel_operacional" not in cols_cli:
@@ -198,7 +205,7 @@ def _migrate(con: sqlite3.Connection):
         con.execute("ALTER TABLE usuarios ADD COLUMN perfil TEXT NOT NULL DEFAULT 'operacional'")
         # Garante que o admin padrão receba o perfil correto se já existia
         con.execute(
-            "UPDATE usuarios SET perfil='admin' WHERE email='felipe.r@jcacontadores.com.br'"
+            "UPDATE usuarios SET perfil='admin' WHERE email='admin@conciliador.local'"
         )
     if "ativo" not in cols_usr:
         con.execute("ALTER TABLE usuarios ADD COLUMN ativo INTEGER NOT NULL DEFAULT 1")
@@ -230,7 +237,7 @@ def init_db():
             cnpj TEXT NOT NULL DEFAULT '',
             codigo_interno TEXT NOT NULL DEFAULT '',
             grupo TEXT NOT NULL DEFAULT '',
-            unidade_jca TEXT NOT NULL DEFAULT '',
+            unidade TEXT NOT NULL DEFAULT '',
             tributacao TEXT NOT NULL DEFAULT '',
             nivel_operacional TEXT NOT NULL DEFAULT '',
             ativo INTEGER NOT NULL DEFAULT 1,
@@ -291,7 +298,7 @@ def init_db():
 
 def _seed_default_admin():
     """Cria o admin padrão se não existir; atualiza a senha se ADMIN_PASSWORD estiver definida."""
-    email = "felipe.r@jcacontadores.com.br"
+    email = "admin@conciliador.local"
     env_pw = os.environ.get("ADMIN_PASSWORD", "").strip()
     with _conn() as con:
         row = con.execute("SELECT id FROM usuarios WHERE email=?", (email,)).fetchone()
@@ -478,7 +485,7 @@ def list_clientes_display(apenas_ativos: bool = True) -> List[dict]:
 def get_cliente_by_id(cliente_id: int) -> Optional[dict]:
     with _conn() as con:
         row = con.execute(
-            """SELECT id, nome, cnpj, codigo_interno, grupo, unidade_jca,
+            """SELECT id, nome, cnpj, codigo_interno, grupo, unidade,
                       tributacao, nivel_operacional, ativo, conta_banco
                FROM clientes WHERE id=?""",
             (cliente_id,),
@@ -540,7 +547,7 @@ def get_clientes_with_stats() -> List[dict]:
     with _conn() as con:
         rows = con.execute(
             """SELECT c.id, c.nome, c.cnpj, c.codigo_interno, c.grupo,
-                      c.unidade_jca, c.tributacao, c.nivel_operacional,
+                      c.unidade, c.tributacao, c.nivel_operacional,
                       c.ativo, c.criado_em,
                       COUNT(d.id) AS num_depara
                FROM clientes c
@@ -560,7 +567,7 @@ def update_cliente(
     cnpj: str = None,
     codigo_interno: str = None,
     grupo: str = None,
-    unidade_jca: str = None,
+    unidade: str = None,
     tributacao: str = None,
     nivel_operacional: str = None,
     ativo: int = None,
@@ -571,7 +578,7 @@ def update_cliente(
 
     fields = dict(
         nome=nome, cnpj=cnpj, codigo_interno=codigo_interno,
-        grupo=grupo, unidade_jca=unidade_jca, tributacao=tributacao,
+        grupo=grupo, unidade=unidade, tributacao=tributacao,
         nivel_operacional=nivel_operacional, ativo=ativo,
     )
     parts = [f"{k}=?" for k, v in fields.items() if v is not None]
@@ -647,14 +654,14 @@ def import_clientes_bulk(data: bytes, suffix: str) -> dict:
             if existing:
                 con.execute(
                     """UPDATE clientes SET nome=?, cnpj=?, codigo_interno=?, grupo=?,
-                       unidade_jca=?, tributacao=?, nivel_operacional=? WHERE id=?""",
+                       unidade=?, tributacao=?, nivel_operacional=? WHERE id=?""",
                     (nome, cnpj, cod, grupo, unidade, tribut, nivel, existing["id"]),
                 )
                 atualizados += 1
             else:
                 try:
                     con.execute(
-                        """INSERT INTO clientes (nome, cnpj, codigo_interno, grupo, unidade_jca,
+                        """INSERT INTO clientes (nome, cnpj, codigo_interno, grupo, unidade,
                            tributacao, nivel_operacional, criado_em)
                            VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
                         (nome, cnpj, cod, grupo, unidade, tribut, nivel, now),

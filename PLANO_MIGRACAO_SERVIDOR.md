@@ -1,4 +1,4 @@
-# Plano de Migração — Banco de Dados para Servidor Local JCA Contadores
+# Plano de Migração — Banco de Dados para Servidor Local
 
 > **Autor:** Equipe de Desenvolvimento  
 > **Data:** 12/05/2026  
@@ -53,10 +53,10 @@ def _configured_db_path() -> Path:
 
 | Item | Valor |
 |------|-------|
-| **Servidor** | Servidor local JCA Contadores (hostname/IP a definir) |
+| **Servidor** | Servidor local (hostname/IP a definir) |
 | **Execução do app** | Streamlit centralizado no servidor |
 | **Usuários simultâneos** | ~50 |
-| **Acesso** | Rede interna da JCA |
+| **Acesso** | Rede interna |
 
 ---
 
@@ -152,7 +152,7 @@ GRANT ALL PRIVILEGES ON DATABASE conciliador TO conciliador_app;
 Editar `pg_hba.conf` para permitir conexões da rede local:
 
 ```
-# Permitir conexões da rede interna da JCA
+# Permitir conexões da rede interna
 host    conciliador    conciliador_app    192.168.0.0/16    scram-sha-256
 host    conciliador    conciliador_app    10.0.0.0/8        scram-sha-256
 ```
@@ -164,7 +164,7 @@ listen_addresses = '*'     # Escutar em todas as interfaces
 max_connections = 100      # Suportar até 100 conexões
 ```
 
-> **Nota:** Ajustar o range de IPs (`192.168.x.x` ou `10.x.x.x`) conforme a rede real da JCA.
+> **Nota:** Ajustar o range de IPs (`192.168.x.x` ou `10.x.x.x`) conforme a rede real.
 
 #### 1.4 Reiniciar o serviço PostgreSQL
 
@@ -251,7 +251,7 @@ CREATE TABLE IF NOT EXISTS clientes (
     cnpj TEXT NOT NULL DEFAULT '',
     codigo_interno TEXT NOT NULL DEFAULT '',
     grupo TEXT NOT NULL DEFAULT '',
-    unidade_jca TEXT NOT NULL DEFAULT '',
+    unidade TEXT NOT NULL DEFAULT '',
     tributacao TEXT NOT NULL DEFAULT '',
     nivel_operacional TEXT NOT NULL DEFAULT '',
     ativo INTEGER NOT NULL DEFAULT 1,
@@ -340,7 +340,7 @@ import psycopg2
 from pathlib import Path
 
 SQLITE_PATH = Path(__file__).parent.parent / "data" / "conciliador.db"
-PG_URL = "postgresql://conciliador_app:SENHA@SERVIDOR-JCA:5432/conciliador"
+PG_URL = "postgresql://conciliador_app:SENHA@SERVIDOR:5432/conciliador"
 
 def migrar():
     # Conectar às duas bases
@@ -501,14 +501,14 @@ Usar o **NSSM** (Non-Sucking Service Manager) para registrar o Streamlit como se
 nssm install ConciliadorBancario "D:\Aplicacoes\Concilia-o\.venv\Scripts\python.exe"
 nssm set ConciliadorBancario AppParameters "-m streamlit run app.py"
 nssm set ConciliadorBancario AppDirectory "D:\Aplicacoes\Concilia-o"
-nssm set ConciliadorBancario Description "Sistema de Conciliação Bancária - JCA Contadores"
+nssm set ConciliadorBancario Description "Sistema de Conciliação Bancária"
 nssm set ConciliadorBancario Start SERVICE_AUTO_START
 
 # Iniciar o serviço
 nssm start ConciliadorBancario
 ```
 
-**Acesso pelos usuários:** `http://SERVIDOR-JCA:8501` (substituir pelo hostname/IP real)
+**Acesso pelos usuários:** `http://SERVIDOR:8501` (substituir pelo hostname/IP real)
 
 ---
 
@@ -607,7 +607,7 @@ $env:PGPASSWORD = "SENHA_SEGURA"
 2. Congelar o uso do sistema antigo (ninguém usa durante a migração)
 3. Executar a migração final (Fases 3-4)
 4. Executar validação completa (Fase 6)
-5. Distribuir o novo endereço de acesso: `http://SERVIDOR-JCA:8501`
+5. Distribuir o novo endereço de acesso: `http://SERVIDOR:8501`
 6. Monitorar o primeiro dia útil de uso
 
 #### Plano de rollback (se algo der errado)
@@ -647,11 +647,11 @@ nssm stop ConciliadorBancario
 
 | # | Decisão | Status |
 |---|---------|--------|
-| 1 | Hostname/IP do servidor da JCA | 🔴 Pendente |
+| 1 | Hostname/IP do servidor | 🔴 Pendente |
 | 2 | Senha do PostgreSQL para a aplicação | 🔴 Definir antes da Fase 1 |
 | 3 | Diretório de instalação no servidor (`D:\Aplicacoes\` ou outro) | 🔴 Definir com TI |
 | 4 | Horário da janela de migração (go-live) | 🔴 Agendar com equipe |
-| 5 | Domínio/DNS interno para acesso (ex: `conciliador.jca.local`) | 🟡 Opcional |
+| 5 | Domínio/DNS interno para acesso (ex: `conciliador.local`) | 🟡 Opcional |
 
 ---
 
@@ -671,7 +671,7 @@ nssm stop ConciliadorBancario
 
 ```
     ┌─────────────────────────────────────────────────────────┐
-    │                 SERVIDOR JCA CONTADORES                  │
+    │                    SERVIDOR LOCAL                        │
     │                                                         │
     │  ┌──────────────┐      ┌──────────────────────────┐    │
     │  │  Streamlit    │────▶│    PostgreSQL 16          │    │
@@ -687,7 +687,7 @@ nssm stop ConciliadorBancario
               │                         │  (Task Scheduler)
     ┌─────────┴─────────┐    ┌─────────┴─────────┐
     │  Navegadores dos   │    │  D:\Backups\       │
-    │  50 usuários JCA   │    │  conciliador\      │
+    │  50 usuários       │    │  conciliador\      │
     │  (rede interna)    │    │  (retenção 30 dias)│
     └───────────────────┘    └───────────────────┘
 ```

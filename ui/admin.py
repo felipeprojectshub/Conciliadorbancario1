@@ -163,7 +163,7 @@ def _show_client_management():
             niv_opts = sorted({c.get("nivel_operacional", "") or "" for c in clientes if c.get("nivel_operacional")})
             filtro_niv = st.selectbox("Nível", ["Todos"] + niv_opts, key="adm_emp_niv")
         with f4:
-            und_opts = sorted({c.get("unidade_jca", "") or "" for c in clientes if c.get("unidade_jca")})
+            und_opts = sorted({c.get("unidade", "") or "" for c in clientes if c.get("unidade")})
             filtro_und = st.selectbox("Unidade", ["Todas"] + und_opts, key="adm_emp_und")
         with f5:
             filtro_st = st.selectbox("Status", ["Ativos", "Todos", "Inativos"], key="adm_emp_st")
@@ -192,7 +192,7 @@ def _show_client_management():
     if filtro_niv != "Todos":
         df = df[df["nivel_operacional"].str.upper() == filtro_niv.upper()]
     if filtro_und != "Todas":
-        df = df[df["unidade_jca"].str.upper() == filtro_und.upper()]
+        df = df[df["unidade"].str.upper() == filtro_und.upper()]
     if filtro_st == "Ativos":
         df = df[df["ativo"] == 1]
     elif filtro_st == "Inativos":
@@ -204,7 +204,7 @@ def _show_client_management():
     # ── Tabela ──
     df_exib = df[[
         "codigo_interno", "nome", "cnpj", "grupo",
-        "unidade_jca", "tributacao", "nivel_operacional",
+        "unidade", "tributacao", "nivel_operacional",
         "num_depara", "ativo",
     ]].copy()
     df_exib["ativo"] = df_exib["ativo"].map({1: "✅ Ativo", 0: "❌ Inativo"})
@@ -341,7 +341,7 @@ def _show_add_import(clientes: list):
                 with r2c1:
                     n_grp = st.text_input("Grupo", key="ae_grp")
                 with r2c2:
-                    n_und = st.text_input("Unidade JCA", key="ae_und")
+                    n_und = st.text_input("Unidade", key="ae_und")
                 with r2c3:
                     n_tri = st.text_input("Tributação", key="ae_tri")
                 with r2c4:
@@ -356,7 +356,7 @@ def _show_add_import(clientes: list):
                         update_cliente(
                             cid,
                             cnpj=n_cnpj.strip(), codigo_interno=n_cod.strip(),
-                            grupo=n_grp.strip(), unidade_jca=n_und.strip(),
+                            grupo=n_grp.strip(), unidade=n_und.strip(),
                             tributacao=n_tri.strip(), nivel_operacional=n_niv.strip(),
                         )
                     log_acao(st.session_state["usuario_email"], "CLIENTE_CRIADO", f"nome={n_nome.strip()}")
@@ -369,7 +369,7 @@ def _show_add_import(clientes: list):
         with st.expander("📥 Importar planilha (Excel / CSV)", expanded=False):
             st.caption(
                 "Colunas detectadas automaticamente: **CÓD, GRUPO, CNPJ, EMPRESAS, "
-                "UNIDADE JCA, TRIBUTAÇÃO 2026, NÍVEL OPERACIONAL**"
+                "UNIDADE, TRIBUTAÇÃO 2026, NÍVEL OPERACIONAL**"
             )
             up = st.file_uploader(
                 "Selecione o arquivo", type=["xlsx", "xls", "csv"], key="adm_imp_file"
@@ -438,7 +438,7 @@ def _show_edit_delete(clientes: list):
             with e4:
                 e_grp = st.text_input("Grupo", value=cli.get("grupo") or "", key=f"ee_grp_{sel_id}")
             with e5:
-                e_und = st.text_input("Unidade JCA", value=cli.get("unidade_jca") or "", key=f"ee_und_{sel_id}")
+                e_und = st.text_input("Unidade", value=cli.get("unidade") or "", key=f"ee_und_{sel_id}")
             with e6:
                 e_tri = st.text_input("Tributação", value=cli.get("tributacao") or "", key=f"ee_tri_{sel_id}")
             with e7:
@@ -464,7 +464,7 @@ def _show_edit_delete(clientes: list):
                     update_cliente(
                         cli["id"],
                         cnpj=e_cnpj.strip(), codigo_interno=e_cod.strip(),
-                        grupo=e_grp.strip(), unidade_jca=e_und.strip(),
+                        grupo=e_grp.strip(), unidade=e_und.strip(),
                         tributacao=e_tri.strip(), nivel_operacional=e_niv.strip(),
                         ativo=1 if e_ativo == "Ativo" else 0,
                     )

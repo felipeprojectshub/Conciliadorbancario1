@@ -1151,7 +1151,7 @@ def main():
 
     # Auto-login: preenche sessão com o usuário admin padrão (sem tela de login)
     if "usuario_email" not in st.session_state:
-        st.session_state["usuario_email"] = "felipe.r@jcacontadores.com.br"
+        st.session_state["usuario_email"] = "admin@conciliador.local"
         st.session_state["usuario_perfil"] = "admin"
         st.session_state["usuario_id"] = 1
         st.session_state["usuario_nome"] = "Felipe"
