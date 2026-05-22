@@ -180,7 +180,6 @@ def _normalizar_financeiro_incremental(params: ConciliacaoParams | None = None) 
     st.session_state["_norm_fin_fp"] = fp
 
 
-@st.cache_data(ttl=300, show_spinner=False)
 def _cached_clientes_display(apenas_ativos: bool = True) -> list[dict]:
     return list_clientes_display(apenas_ativos=apenas_ativos)
 
@@ -195,7 +194,7 @@ def _clear_depara_cache():
 
 
 def _clear_clientes_cache():
-    _cached_clientes_display.clear()
+    pass
 
 
 def _perf_add(etapa: str, inicio: float, extra: str = ""):
@@ -271,82 +270,15 @@ def _render_agent_report():
 def sidebar() -> str:
     with st.sidebar:
         # ── Logo ──────────────────────────────────────────────────────────────
-        logo_path = Path(__file__).parent / "assets" / "logo_JCA.png_name_20221221-21843-1bcb5tg.png"
-        if logo_path.exists():
-            st.markdown(
-                f'<div style="text-align:center">'
-                f'<img src="data:image/png;base64,{__import__("base64").b64encode(logo_path.read_bytes()).decode()}" width="160">'
-                f'</div>',
-                unsafe_allow_html=True,
-            )
-        else:
-            st.markdown("**JCA Contadores Associados**")
-
-        st.divider()
-
-        # ── Card do usuário ───────────────────────────────────────────────────
-        email = st.session_state.get("usuario_email", "")
         perfil = st.session_state.get("usuario_perfil", "")
-        nome = st.session_state.get("usuario_nome", "").strip()
-        depto = st.session_state.get("usuario_departamento", "").strip()
 
-        perfil_label = "Administrador" if perfil == "admin" else "Operacional"
-        cor = "#FF9500" if perfil == "admin" else "#1565C0"
-        inicial = (nome or email)[0].upper() if (nome or email) else "?"
-        display_name = nome if nome else email
-        depto_html = (
-            f"<div style='font-size:0.72em;color:rgba(120,120,120,0.95);margin-top:3px;"
-            f"letter-spacing:0.06em;text-transform:uppercase'>{depto}</div>"
-            if depto else ""
-        )
-
-        st.markdown(
-            f"""
-            <div style="display:flex;flex-direction:column;align-items:center;
-                        padding:14px 10px 16px;margin-bottom:2px;
-                        background:var(--secondary-background-color);
-                        border-radius:14px;
-                        border:1px solid rgba(120,120,120,0.18);
-                        gap:8px;">
-                <div style="width:54px;height:54px;border-radius:50%;
-                            background:linear-gradient(135deg,{cor},{cor}99);
-                            display:flex;align-items:center;justify-content:center;
-                            font-size:1.45em;font-weight:800;color:white;
-                            box-shadow:0 4px 14px {cor}55;flex-shrink:0;">
-                    {inicial}
-                </div>
-                <div style="text-align:center;line-height:1.35;">
-                    <div style="font-weight:700;font-size:0.88em;color:var(--text-color);
-                                letter-spacing:0.04em;text-transform:uppercase;">
-                        {display_name}
-                    </div>
-                </div>
-                <span style="background:{cor}1a;color:{cor};
-                             padding:3px 13px;border-radius:20px;
-                             font-size:0.70em;font-weight:700;
-                             border:1px solid {cor}44;letter-spacing:0.05em;
-                             text-transform:uppercase;">
-                    {perfil_label}
-                </span>
-                {depto_html}
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-        st.divider()
-
-        opcoes = ["Conciliação Contábil", "De x Para Geral", "Minha Conta"]
+        opcoes = ["Conciliação Contábil", "De x Para Geral"]
         if perfil == "admin":
             opcoes.append("Configurações Gerais")
+        if st.session_state.get("nav_pagina") not in opcoes:
+            st.session_state["nav_pagina"] = opcoes[0]
 
         pagina = st.radio("Navegação", opcoes, key="nav_pagina")
-
-        st.divider()
-        if st.button("Sair", key="btn_logout", use_container_width=True):
-            log_acao(email, "LOGOUT", "")
-            for k in list(st.session_state.keys()):
-                del st.session_state[k]
-            st.rerun()
 
     return pagina
 
@@ -430,6 +362,8 @@ def _step_cliente_conta_banco() -> bool:
     labels = {c["id"]: c["label"] for c in clientes}
     by_id = {c["id"]: c for c in clientes}
     ids = list(labels)
+    if st.session_state.get("wiz_cli_sel_id_empty_default") not in ids:
+        st.session_state["wiz_cli_sel_id_empty_default"] = None
     cliente_id = st.selectbox(
         "Empresa / Cliente",
         ids,
@@ -999,6 +933,8 @@ def depara_page():
     labels = {c["id"]: c["label"] for c in clientes}
     by_id = {c["id"]: c for c in clientes}
     ids = list(labels)
+    if st.session_state.get("dp_cli_sel_id_empty_default") not in ids:
+        st.session_state["dp_cli_sel_id_empty_default"] = None
     cliente_id = st.selectbox(
         "Selecionar empresa",
         ids,
@@ -1229,8 +1165,6 @@ def main():
         wizard_page()
     elif pagina == "De x Para Geral":
         depara_page()
-    elif pagina == "Minha Conta":
-        minha_conta_page()
     elif pagina == "Configurações Gerais":
         if st.session_state.get("usuario_perfil") == "admin":
             show_admin_panel()

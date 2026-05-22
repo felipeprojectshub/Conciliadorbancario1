@@ -1,5 +1,5 @@
 """
-Configurações Gerais — gestão de empresas, usuários, auditoria e histórico De x Para.
+Configurações Gerais — gestão de empresas, histórico De x Para e backup.
 """
 from __future__ import annotations
 import io
@@ -29,25 +29,16 @@ def show_admin_panel():
     _show_kpi_banner()
     st.divider()
 
-    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+    tab1, tab2, tab3 = st.tabs([
         "🏢 Empresas",
-        "👤 Atividade por Usuário",
-        "👥 Gestão de Usuários",
-        "📋 Auditoria de Acessos",
         "📝 Histórico De x Para",
         "💾 Backup",
     ])
     with tab1:
         _show_client_management()
     with tab2:
-        _show_user_activity()
-    with tab3:
-        _show_user_management()
-    with tab4:
-        _show_audit_logs()
-    with tab5:
         _show_depara_historico()
-    with tab6:
+    with tab3:
         _show_backup_restore()
 
 
@@ -55,20 +46,18 @@ def show_admin_panel():
 
 def _show_kpi_banner():
     kpis = get_kpis()
-    c1, c2, c3, c4, c5, c6 = st.columns(6)
-    c1.metric("👥 Usuários ativos", kpis["usuarios_ativos"])
-    c2.metric("🏢 Empresas ativas", kpis["empresas_ativas"])
-    c3.metric("🔑 Logins (24h)", kpis["logins_24h"])
-    c4.metric("📝 De x Para (7d)", kpis["depara_semana"])
-    c5.metric("📊 Relatórios (30d)", kpis["relatorios_mes"])
-    c6.metric("🔗 Total regras", kpis["total_depara"])
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("🏢 Empresas ativas", kpis["empresas_ativas"])
+    c2.metric("📝 De x Para (7d)", kpis["depara_semana"])
+    c3.metric("📊 Relatórios (30d)", kpis["relatorios_mes"])
+    c4.metric("🔗 Total regras", kpis["total_depara"])
 
 
 def _show_backup_restore():
     st.subheader("Backup e restauração do banco")
     st.caption(f"Banco atual: `{get_database_path()}`")
     st.warning(
-        "Em ambientes sem disco persistente, alterações feitas em usuários, senhas e De x Para "
+        "Em ambientes sem disco persistente, alterações feitas em empresas e De x Para "
         "podem ser perdidas em reboot ou atualização. Baixe backups regularmente ou configure "
         "`CONCILIADOR_DB_PATH` para um volume persistente."
     )
@@ -92,7 +81,7 @@ def _show_backup_restore():
         st.markdown("**Restaurar backup**")
         up = st.file_uploader("Arquivo .db de backup", type=["db", "sqlite"], key="db_restore_file")
         confirmar = st.checkbox(
-            "Confirmo que a restauração substituirá usuários, senhas, empresas, De x Para e logs atuais.",
+            "Confirmo que a restauração substituirá empresas, De x Para e demais dados atuais.",
             key="db_restore_confirm",
         )
         if st.button("Restaurar backup", type="primary", disabled=not (up and confirmar), key="db_restore_btn"):
